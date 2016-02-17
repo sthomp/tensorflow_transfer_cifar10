@@ -8,8 +8,7 @@ import tensorflow as tf
 import numpy as np
 from sklearn import cross_validation
 from data_utils import load_CIFAR10
-from extract import create_graph
-from extract import iterate_mini_batches
+from extract import create_graph, iterate_mini_batches, batch_pool3_features
 from datetime import datetime
 import matplotlib.pyplot as plt
 from tsne import tsne
@@ -27,6 +26,20 @@ def load_pool3_data():
     X_train_file = 'X_train_20160212-00:06:14.npy'
     y_train_file = 'y_train_20160212-00:06:14.npy'
     return np.load(X_train_file), np.load(y_train_file), np.load(X_test_file), np.load(y_test_file)
+
+def serialize_cifar_pool3(X,filename):
+    print 'About to generate file: %s' % filename
+    sess = tf.InteractiveSession()
+    X_pool3 = batch_pool3_features(sess,X)
+    np.save(filename,X_pool3)
+
+def serialize_data():
+    X_train, y_train, X_test, y_test = load_CIFAR10(cifar10_dir)
+    datetime_str = datetime.datetime.today().strftime('%Y%m%d-%H:%M:%S')
+    serialize_cifar_pool3(X_train, 'X_train_'+datetime_str)
+    serialize_cifar_pool3(X_test, 'X_test_'+datetime_str)
+    np.save('y_train_'+datetime_str,y_train)
+    np.save('y_test_'+datetime_str,y_test)
 
 classes = np.array(['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'])
 cifar10_dir = 'resources/datasets/cifar-10-batches-py'
@@ -59,6 +72,7 @@ tf.app.flags.DEFINE_integer('eval_step_interval', 10,
 
 
 
+# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/image_retraining/retrain.py
 def ensure_name_has_port(tensor_name):
     """Makes sure that there's a port number at the end of the tensor name.
     Args:
@@ -72,6 +86,7 @@ def ensure_name_has_port(tensor_name):
         name_with_port = tensor_name
     return name_with_port
 
+# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/image_retraining/retrain.py
 def add_final_training_ops(graph, class_count, final_tensor_name,
                            ground_truth_tensor_name):
     """Adds a new softmax and fully-connected layer for training.
@@ -109,7 +124,7 @@ def add_final_training_ops(graph, class_count, final_tensor_name,
         cross_entropy_mean)
     return train_step, cross_entropy_mean
 
-
+# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/image_retraining/retrain.py
 def add_evaluation_step(graph, final_tensor_name, ground_truth_tensor_name):
     """Inserts the operations we need to evaluate the accuracy of our results.
     Args:
