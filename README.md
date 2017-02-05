@@ -32,4 +32,10 @@ This would run the input images through the trained Inception V3 network and sav
 3. transfer_cifar10_softmax.py
 
 ## Note
-function ```load_CIFAR10()``` in data_utils.py has been modified to return only 1000 training images and 100 test images from the CIFAR-10 data. Modify this to use the entire dataset.
+
+function ```load_CIFAR10()``` in data_utils.py can be modified to return only 1000 training images and 100 test images from the CIFAR-10 data. This will speed up the
+generation of bottlenecks for a quick demo.
+
+
+##
+This is the code that supplements my original [blog post](https://medium.com/@st553/using-transfer-learning-to-classify-images-with-tensorflow-b0f3142b9366)

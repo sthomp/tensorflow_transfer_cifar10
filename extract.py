@@ -42,7 +42,6 @@ def batch_pool3_features(sess,X_input):
 
 def iterate_mini_batches(X_input,Y_input,batch_size):
     n_train = X_input.shape[0]
-    print "===========ntrain=========%d"%(n_train)
 
     for ndx in range(0, n_train, batch_size):
         yield X_input[ndx:min(ndx + batch_size, n_train)], Y_input[ndx:min(ndx + batch_size, n_train)]
