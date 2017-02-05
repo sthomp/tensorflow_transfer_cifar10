@@ -25,11 +25,11 @@ This would run the input images through the trained Inception V3 network and sav
    These files store the oputput of layer pool3 of the Inception model and the corresponding labels. Training for the new task will use these as inputs.
 
 ## Training for new task
-1. Add desired layers by modifying function ```add_final_training_ops()```
+1. Add desired layers by modifying function ```add_final_training_ops()``` in transfer_cifar10_softmax.py.
 
 2. Set flag DO_SERIALIZATION to False.
 
-3. transfer_cifar10_softmax.py
+3. run script transfer_cifar10_softmax.py.
 
 ## Note
 function ```load_CIFAR10()``` in data_utils.py has been modified to return only 1000 training images and 100 test images from the CIFAR-10 data. Modify this to use the entire dataset.
@@ -37,7 +37,7 @@ function ```load_CIFAR10()``` in data_utils.py has been modified to return only 
 ##Todo Tasks
 - [x] Fix to train in batches
 - [ ] Code Cleanup
-- [ ] Create methods and classes.
+- [ ] Create methods and classes
 - [ ] Fix tsne plotting code
 
 
