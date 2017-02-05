@@ -42,7 +42,6 @@ def serialize_data():
     print X_test.shape
     print y_train.shape
     print y_test.shape
-    datetime_str = datetime.today().strftime('%Y%m%d-%H:%M:%S')
     serialize_cifar_pool3(X_train, 'X_train')
     serialize_cifar_pool3(X_test, 'X_test')
     np.save('y_train',y_train)
