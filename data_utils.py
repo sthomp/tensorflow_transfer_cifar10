@@ -28,4 +28,5 @@ def load_CIFAR10(ROOT):
   Ytr = np.concatenate(ys)
   del X, Y
   Xte, Yte = load_CIFAR_batch(os.path.join(ROOT, 'test_batch'))
-  return Xtr, Ytr, Xte, Yte
+
+  return Xtr[:1000,], Ytr[:1000,], Xte[:100,], Yte[:100,]

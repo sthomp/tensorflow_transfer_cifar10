@@ -3,7 +3,7 @@ Trying out the transfer learning example from:
 https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/image_retraining/retrain.py
 """
 
-
+from PIL import Image
 import tensorflow as tf
 import numpy as np
 from sklearn import cross_validation
@@ -21,10 +21,10 @@ import pandas as pd
 
 def load_pool3_data():
     # Update these file names after you serialize pool_3 values
-    X_test_file = 'X_test_20160212-00:06:14.npy'
-    y_test_file = 'y_test_20160212-00:06:14.npy'
-    X_train_file = 'X_train_20160212-00:06:14.npy'
-    y_train_file = 'y_train_20160212-00:06:14.npy'
+    X_test_file = 'X_test_20170205-11:11:22.npy'
+    y_test_file = 'y_test_20170205-11:11:22.npy'
+    X_train_file = 'X_train_20170205-11:11:22.npy'
+    y_train_file = 'y_train_20170205-11:11:22.npy'
     return np.load(X_train_file), np.load(y_train_file), np.load(X_test_file), np.load(y_test_file)
 
 def serialize_cifar_pool3(X,filename):
@@ -35,14 +35,23 @@ def serialize_cifar_pool3(X,filename):
 
 def serialize_data():
     X_train, y_train, X_test, y_test = load_CIFAR10(cifar10_dir)
-    datetime_str = datetime.datetime.today().strftime('%Y%m%d-%H:%M:%S')
+    print X_train.shape
+    print X_test.shape
+    print y_train.shape
+    print y_test.shape
+    datetime_str = datetime.today().strftime('%Y%m%d-%H:%M:%S')
     serialize_cifar_pool3(X_train, 'X_train_'+datetime_str)
     serialize_cifar_pool3(X_test, 'X_test_'+datetime_str)
     np.save('y_train_'+datetime_str,y_train)
     np.save('y_test_'+datetime_str,y_test)
 
+
 classes = np.array(['plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck'])
 cifar10_dir = 'resources/datasets/cifar-10-batches-py'
+
+# serialize_data()
+# exit(0)
+
 X_train_orig, y_train_orig, X_test_orig, y_test_orig = load_CIFAR10(cifar10_dir)
 X_train_pool3, y_train_pool3, X_test_pool3, y_test_pool3 = load_pool3_data()
 X_train, X_validation, Y_train, y_validation = cross_validation.train_test_split(X_train_pool3, y_train_pool3, test_size=0.20, random_state=42)
@@ -70,6 +79,14 @@ tf.app.flags.DEFINE_string('final_tensor_name', 'final_result',
 tf.app.flags.DEFINE_integer('eval_step_interval', 10,
                             """How often to evaluate the training results.""")
 
+graph = create_graph()
+bottleneck_tensor = graph.get_tensor_by_name('pool_3/_reshape:0')
+BOTTLENECK_TENSOR_SIZE = bottleneck_tensor._shape[1].value
+# allows for larger batch sizes as opposed to just 1 if we used bottleneck
+# tensor
+BOTTLENECK_INPUT = tf.placeholder(tf.float32,
+                                  shape=[None, BOTTLENECK_TENSOR_SIZE],
+                                  name='BottleneckInputPlaceholder')
 
 
 # https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/image_retraining/retrain.py
@@ -105,13 +122,14 @@ def add_final_training_ops(graph, class_count, final_tensor_name,
     Returns:
       Nothing.
     """
-    bottleneck_tensor = graph.get_tensor_by_name(ensure_name_has_port(
-        BOTTLENECK_TENSOR_NAME))
+
+    #bottleneck_tensor = graph.get_tensor_by_name(ensure_name_has_port( BOTTLENECK_TENSOR_NAME))
+
     layer_weights = tf.Variable(
         tf.truncated_normal([BOTTLENECK_TENSOR_SIZE, class_count], stddev=0.001),
         name='final_weights')
     layer_biases = tf.Variable(tf.zeros([class_count]), name='final_biases')
-    logits = tf.matmul(bottleneck_tensor, layer_weights,
+    logits = tf.matmul(BOTTLENECK_INPUT, layer_weights,
                        name='final_matmul') + layer_biases
     tf.nn.softmax(logits, name=final_tensor_name)
     ground_truth_placeholder = tf.placeholder(tf.float32,
@@ -152,7 +170,7 @@ def do_train(sess,X_input, Y_input, X_validation, Y_validation):
     mini_batch_size = 10
     n_train = X_input.shape[0]
 
-    graph = create_graph()
+    #graph = create_graph()
 
     train_step, cross_entropy = add_final_training_ops(
         graph, len(classes), FLAGS.final_tensor_name,
@@ -175,20 +193,22 @@ def do_train(sess,X_input, Y_input, X_validation, Y_validation):
         y_one_hot_validation = encode_one_hot(len(classes), Y_validation)
         shuffledX = X_input[shuffledRange,:]
         shuffledY = y_one_hot_train[shuffledRange]
+
         for Xi, Yi in iterate_mini_batches(shuffledX, shuffledY, mini_batch_size):
             sess.run(train_step,
-                     feed_dict={bottleneck_tensor: Xi,
+                     feed_dict={BOTTLENECK_INPUT: Xi,
                                 ground_truth_tensor: Yi})
             # Every so often, print out how well the graph is training.
             is_last_step = (i + 1 == FLAGS.how_many_training_steps)
+
             if (i % FLAGS.eval_step_interval) == 0 or is_last_step:
                 train_accuracy, cross_entropy_value = sess.run(
                   [evaluation_step, cross_entropy],
-                  feed_dict={bottleneck_tensor: Xi,
+                  feed_dict={BOTTLENECK_INPUT: Xi,
                              ground_truth_tensor: Yi})
                 validation_accuracy = sess.run(
                   evaluation_step,
-                  feed_dict={bottleneck_tensor: X_validation,
+                  feed_dict={BOTTLENECK_INPUT: X_validation,
                              ground_truth_tensor: y_one_hot_validation})
                 print('%s: Step %d: Train accuracy = %.1f%%, Cross entropy = %f, Validation accuracy = %.1f%%' %
                     (datetime.now(), i, train_accuracy * 100, cross_entropy_value, validation_accuracy * 100))
@@ -196,13 +216,13 @@ def do_train(sess,X_input, Y_input, X_validation, Y_validation):
 
     test_accuracy = sess.run(
         evaluation_step,
-        feed_dict={bottleneck_tensor: X_test_pool3,
+        feed_dict={BOTTLENECK_INPUT: X_test_pool3,
                    ground_truth_tensor: encode_one_hot(len(classes), y_test_pool3)})
     print('Final test accuracy = %.1f%%' % (test_accuracy * 100))
 
 def show_test_images(sess,X_img, X_features, Y):
     n = X_img.shape[0]
-
+    print "num, test images: %d"%(n)
     def rand_ordering():
         return np.random.permutation(n)
 
@@ -214,12 +234,14 @@ def show_test_images(sess,X_img, X_features, Y):
         Xi_features=X_features[i,:].reshape(1,2048)
         result_tensor = sess.graph.get_tensor_by_name(ensure_name_has_port(FLAGS.final_tensor_name))
         probs = sess.run(result_tensor,
-                         feed_dict={'pool_3/_reshape:0': Xi_features})
+                         feed_dict={BOTTLENECK_INPUT: Xi_features})
         predicted_class=classes[np.argmax(probs)]
         Yi = Y[i]
         Yi_label = classes[Yi]
         plt.title('true=%s, predicted=%s' % (Yi_label, predicted_class))
-        plt.imshow(Xi_img.astype('uint8'))
+        ax = plt.axes()
+        ax.grid(False)
+        ax.imshow(Xi_img.astype('uint8'),interpolation='nearest')
         print Yi_label
         plt.show()
         plt.close()
@@ -233,9 +255,9 @@ def plot_tsne(X_input_pool3, Y_input,n=10000):
     sns.lmplot("x1","x2",data=df.convert_objects(convert_numeric=True),hue="y_label",fit_reg=False,legend=True,palette="Set1")
     print 'done'
 
-# plot_tsne(X_train_pool3,y_train_pool3)
+#plot_tsne(X_train_pool3,y_train_pool3)
 sess = tf.InteractiveSession()
 do_train(sess,X_train,Y_train,X_validation,y_validation)
-# show_test_images(sess,X_test_orig, X_test_pool3, y_test_orig)
+show_test_images(sess,X_test_orig, X_test_pool3, y_test_orig)
 
 

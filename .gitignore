@@ -1,2 +1,5 @@
+*.pyc
+*.npy
 .idea/
 cifar-10-batches-py/
+resources/
