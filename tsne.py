@@ -172,5 +172,4 @@ if __name__ == "__main__":
 	Y = tsne(X, 2, 50, 20.0);
 	Plot.scatter(Y[:,0], Y[:,1], 20, labels);
 	Plot.show();
-	#Plot.close()
 	print 'done'
