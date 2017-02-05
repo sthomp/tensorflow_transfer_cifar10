@@ -38,10 +38,6 @@ def serialize_cifar_pool3(X,filename):
 
 def serialize_data():
     X_train, y_train, X_test, y_test = load_CIFAR10(cifar10_dir)
-    print X_train.shape
-    print X_test.shape
-    print y_train.shape
-    print y_test.shape
     serialize_cifar_pool3(X_train, 'X_train')
     serialize_cifar_pool3(X_test, 'X_test')
     np.save('y_train',y_train)
