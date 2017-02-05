@@ -33,3 +33,12 @@ This would run the input images through the trained Inception V3 network and sav
 
 ## Note
 function ```load_CIFAR10()``` in data_utils.py has been modified to return only 1000 training images and 100 test images from the CIFAR-10 data. Modify this to use the entire dataset.
+
+##Todo Tasks
+- [x] Fix to train in batches
+- [ ] Code Cleanup
+- [ ] Create methods and classes.
+- [ ] Fix tsne plotting code
+
+
+
