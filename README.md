@@ -43,6 +43,3 @@ generation of bottlenecks for a quick demo.
 - [ ] Create methods and classes
 - [ ] Fix tsne plotting code
 
-
-
->>>>>>> ad97c5b4883027c77b89c05c7303d842fd086279
